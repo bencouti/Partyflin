@@ -3,12 +3,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Jellyfin.Plugin.Partyflin.Models;
 using MediaBrowser.Common.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Partyflin.Services;
+
+public enum BallotResult
+{
+    Saved,
+    NameTaken,
+    PollFull
+}
 
 /// <summary>
 /// Stockage des votes dans un fichier JSON du dossier de données de Jellyfin.
@@ -46,9 +54,10 @@ public class PollStore
 
     public Poll? GetByToken(string token)
     {
+        var candidate = Encoding.UTF8.GetBytes(token);
         lock (_lock)
         {
-            return Load().FirstOrDefault(p => string.Equals(p.Token, token, StringComparison.Ordinal));
+            return Load().FirstOrDefault(p => CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(p.Token), candidate));
         }
     }
 
@@ -102,11 +111,21 @@ public class PollStore
     /// <summary>
     /// Enregistre (ou remplace) le bulletin d'un votant.
     /// </summary>
-    public void SaveBallot(Guid pollId, string voterId, string voterName, IReadOnlyList<Guid> itemIds)
+    public BallotResult SaveBallot(Guid pollId, string voterId, string voterName, IReadOnlyList<Guid> itemIds, int maxBallots)
     {
         lock (_lock)
         {
             var poll = Load().First(p => p.Id == pollId);
+            var isNewVoter = poll.Ballots.All(b => b.VoterId != voterId);
+            if (poll.Ballots.Any(b => b.VoterId != voterId && string.Equals(b.VoterName, voterName, StringComparison.OrdinalIgnoreCase)))
+            {
+                return BallotResult.NameTaken;
+            }
+
+            if (isNewVoter && poll.Ballots.Count >= maxBallots)
+            {
+                return BallotResult.PollFull;
+            }
 
             // Nouvelle liste plutôt que modification en place : les lecteurs hors verrou restent cohérents.
             var ballots = poll.Ballots.Where(b => b.VoterId != voterId).ToList();
@@ -119,6 +138,7 @@ public class PollStore
             });
             poll.Ballots = ballots;
             Save();
+            return BallotResult.Saved;
         }
     }
 

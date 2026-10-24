@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Jellyfin.Data.Enums;
@@ -18,12 +19,32 @@ namespace Jellyfin.Plugin.Partyflin.Services;
 public class MovieResolver
 {
     private const int SearchLimit = 30;
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(30);
 
     private readonly ILibraryManager _libraryManager;
+    private readonly ConcurrentDictionary<Guid, CachedResolution> _cache = new();
 
     public MovieResolver(ILibraryManager libraryManager)
     {
         _libraryManager = libraryManager;
+    }
+
+    /// <summary>
+    /// Films d'un vote, mis en cache quelques secondes : les requêtes publiques (affiches, données, bulletins)
+    /// ne doivent pas pouvoir déclencher une requête complète sur la bibliothèque à chaque appel.
+    /// </summary>
+    public IReadOnlyList<Movie> ResolveCached(Poll poll)
+    {
+        var signature = string.Join('|', poll.Sources.Select(s => $"{s.Type}:{s.Value}"))
+            + '#' + string.Join(',', poll.ExcludedItemIds);
+        if (_cache.TryGetValue(poll.Id, out var cached) && cached.Signature == signature && cached.Expires > DateTime.UtcNow)
+        {
+            return cached.Movies;
+        }
+
+        var movies = Resolve(poll.Sources, poll.ExcludedItemIds);
+        _cache[poll.Id] = new CachedResolution(signature, DateTime.UtcNow + CacheDuration, movies);
+        return movies;
     }
 
     public IReadOnlyList<Movie> Resolve(IEnumerable<PollSource> sources, IEnumerable<Guid>? excluded = null)
@@ -197,4 +218,6 @@ public class MovieResolver
     }
 
     private static string FilmCount(int count) => count > 1 ? $"{count} films" : $"{count} film";
+
+    private sealed record CachedResolution(string Signature, DateTime Expires, IReadOnlyList<Movie> Movies);
 }

@@ -21,7 +21,7 @@ Plugin Jellyfin (12.3+) pour choisir le film d'une soirée entre amis : vous cr�
 ### Depuis le dépôt de plugins (recommandé)
 
 1. Tableau de bord → **Plugins** → **Dépôts** → **+**, puis ajoutez :
-   `https://raw.githubusercontent.com/<compte>/<repo>/main/manifest.json`
+   `https://raw.githubusercontent.com/bencouti/Partyflin/main/manifest.json`
 2. **Catalogue** → **Partyflin** → **Installer**, puis redémarrez Jellyfin.
 
 Les mises à jour apparaissent ensuite dans le catalogue comme pour les plugins officiels.
@@ -62,7 +62,9 @@ dotnet run scripts/package.cs -- --base-url https://exemple.com/partyflin
 ## Sécurité
 
 - Les endpoints d'administration (`/Partyflin/Polls`, `/Search`, `/Preview`) sont réservés aux administrateurs.
-- Les endpoints de vote (`/Partyflin/Vote/{jeton}/…`) sont anonymes, protégés uniquement par le jeton aléatoire du lien. Ils n'exposent que les films de la soirée (titre, année, résumé, affiche).
+- Les endpoints de vote (`/Partyflin/Vote/{jeton}/…`) sont anonymes, protégés uniquement par le jeton aléatoire du lien (96 bits). Ils n'exposent que les films de la soirée (titre, année, résumé, affiche).
+- La page de vote est servie avec une Content-Security-Policy stricte (script à nonce, pas d'iframe, pas de `Referer`) : même en cas de faille d'affichage, aucun script injecté ne pourrait lire la session Jellyfin d'un administrateur qui ouvre le lien.
+- Limites anti-abus : 200 participants par soirée, requêtes de vote limitées à 16 Ko, prénoms de 40 caractères (caractères de contrôle retirés), liste de films mise en cache 30 s.
 - Un votant est reconnu par un identifiant stocké dans son navigateur : c'est pratique entre amis, mais rien n'empêche quelqu'un de voter deux fois depuis deux navigateurs.
 
 ## Données

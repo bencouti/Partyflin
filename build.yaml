@@ -1,6 +1,6 @@
 name: "Partyflin"
 guid: "ce2da81e-c439-4976-8e42-4382f20e48b1"
-version: "1.0.0.0"
+version: "1.0.1.0"
 targetAbi: "12.3.0.0"
 framework: "net10.0"
 owner: "partyflin"
@@ -13,4 +13,6 @@ category: "General"
 artifacts:
   - "Jellyfin.Plugin.Partyflin.dll"
 changelog: >
-  Première version.
+  Sécurité : Content-Security-Policy stricte sur la page de vote, pas de Referer, interdiction des iframes,
+  requêtes de vote limitées à 16 Ko, 200 participants maximum par soirée, prénoms nettoyés,
+  jeton comparé en temps constant, liste de films mise en cache 30 s.

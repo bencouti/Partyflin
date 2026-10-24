@@ -3,7 +3,7 @@
 #  - ajoute la version au manifest.json de la branche main (dépôt de plugins Jellyfin).
 #
 # URL du dépôt à ajouter dans Jellyfin :
-#   https://raw.githubusercontent.com/<compte>/<repo>/main/manifest.json
+#   https://raw.githubusercontent.com/bencouti/Partyflin/main/manifest.json
 
 name: Release
 

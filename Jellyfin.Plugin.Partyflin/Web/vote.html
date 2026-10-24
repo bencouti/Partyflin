@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#0f0d0b">
 <title>Partyflin · Vote</title>
 <style>
@@ -320,7 +321,7 @@
       r.Entries.map(function (e, i) {
         return '<div class="result">' +
           '<div class="rank">' + (i + 1) + '</div>' +
-          '<img class="thumb" loading="lazy" alt="" src="' + posterUrl(e.ItemId) + '" onerror="this.style.visibility=\'hidden\'">' +
+          '<img class="thumb" loading="lazy" alt="" src="' + posterUrl(e.ItemId) + '">' +
           '<div><div class="result-head"><strong>' + esc(e.Name) + (e.Year ? ' <span class="hint">(' + e.Year + ')</span>' : '') + '</strong>' +
           '<span class="votes">' + e.Votes + ' vote' + (e.Votes > 1 ? 's' : '') + '</span></div>' +
           '<div class="track"><div style="width:' + Math.round(e.Votes * 100 / top) + '%"></div></div>' +
@@ -460,6 +461,9 @@
     }, true);
   }
 
+  $('app').addEventListener('error', function (e) {
+    if (e.target.classList && e.target.classList.contains('thumb')) e.target.style.visibility = 'hidden';
+  }, true);
   $('submit').onclick = submit;
   $('details').addEventListener('click', function (e) { if (e.target === this) this.close(); });
 
