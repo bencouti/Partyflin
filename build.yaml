@@ -1,0 +1,16 @@
+name: "Partyflin"
+guid: "ce2da81e-c439-4976-8e42-4382f20e48b1"
+version: "1.0.0.0"
+targetAbi: "12.3.0.0"
+framework: "net10.0"
+owner: "partyflin"
+overview: "Liens de vote pour choisir le film d'une soirée entre amis"
+description: >
+  Créez des soirées films et partagez un lien de vote public. Les films proposés
+  peuvent venir d'un genre, d'une bibliothèque, d'une playlist, de collections ou
+  être choisis individuellement.
+category: "General"
+artifacts:
+  - "Jellyfin.Plugin.Partyflin.dll"
+changelog: >
+  Première version.

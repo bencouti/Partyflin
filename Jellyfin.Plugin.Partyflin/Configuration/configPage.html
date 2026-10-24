@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Partyflin</title>
+</head>
+<body>
+<div id="PartyflinConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+    <style>
+        #PartyflinConfigPage .pf-muted { opacity: .7; font-size: .9em; }
+        #PartyflinConfigPage .pf-card { border: 1px solid rgba(128,128,128,.3); border-radius: 8px; padding: 1em 1.2em; margin-bottom: 1em; }
+        #PartyflinConfigPage .pf-card h3 { margin: 0 0 .3em; }
+        #PartyflinConfigPage .pf-row { display: flex; flex-wrap: wrap; gap: .5em; align-items: center; }
+        #PartyflinConfigPage .pf-row .emby-button { margin: 0; }
+        #PartyflinConfigPage .pf-badge { display: inline-block; padding: .1em .6em; border-radius: 1em; font-size: .8em; font-weight: 600; }
+        #PartyflinConfigPage .pf-open { background: rgba(0,164,90,.25); color: #3ddc84; }
+        #PartyflinConfigPage .pf-closed { background: rgba(200,60,60,.25); color: #ff7b7b; }
+        #PartyflinConfigPage .pf-link { font-family: monospace; font-size: .85em; word-break: break-all; padding: .4em .6em; background: rgba(128,128,128,.15); border-radius: 4px; flex: 1 1 280px; }
+        #PartyflinConfigPage .pf-chips { display: flex; flex-wrap: wrap; gap: .4em; margin: .5em 0 1em; }
+        #PartyflinConfigPage .pf-chip { display: inline-flex; align-items: center; gap: .4em; padding: .3em .4em .3em .8em; border-radius: 1em; background: rgba(0,164,220,.2); }
+        #PartyflinConfigPage .pf-chip small { opacity: .7; }
+        #PartyflinConfigPage .pf-chip button { background: none; border: 0; color: inherit; cursor: pointer; font-size: 1.1em; line-height: 1; padding: 0 .3em; }
+        #PartyflinConfigPage .pf-search { display: flex; gap: .5em; flex-wrap: wrap; align-items: flex-end; }
+        #PartyflinConfigPage .pf-search .selectContainer, #PartyflinConfigPage .pf-search .inputContainer { margin-bottom: 0; }
+        #PartyflinConfigPage .pf-list { max-height: 320px; overflow-y: auto; border: 1px solid rgba(128,128,128,.25); border-radius: 6px; margin: .6em 0 1.2em; }
+        #PartyflinConfigPage .pf-list:empty { display: none; }
+        #PartyflinConfigPage .pf-item { display: flex; justify-content: space-between; align-items: center; gap: .5em; padding: .45em .8em; border-bottom: 1px solid rgba(128,128,128,.15); cursor: pointer; }
+        #PartyflinConfigPage .pf-item:last-child { border-bottom: 0; }
+        #PartyflinConfigPage .pf-item:hover { background: rgba(128,128,128,.12); }
+        #PartyflinConfigPage .pf-item.pf-excluded span:first-child { text-decoration: line-through; opacity: .5; }
+        #PartyflinConfigPage .pf-bar { height: 8px; background: rgba(128,128,128,.2); border-radius: 4px; overflow: hidden; margin: .3em 0 .8em; }
+        #PartyflinConfigPage .pf-bar > div { height: 100%; background: #00a4dc; }
+        #PartyflinConfigPage .pf-hidden { display: none !important; }
+    </style>
+
+    <div data-role="content">
+        <div class="content-primary">
+
+            <!-- Liste des votes -->
+            <div id="pfListView">
+                <div class="sectionTitleContainer flex align-items-center">
+                    <h2 class="sectionTitle">Partyflin – Soirées films</h2>
+                </div>
+                <p class="pf-muted">Créez un lien de vote, envoyez-le à vos amis : chacun choisit ses films préférés, sans compte Jellyfin.</p>
+
+                <button is="emby-button" type="button" id="pfNewPoll" class="raised button-submit emby-button">
+                    <span>+ Nouvelle soirée</span>
+                </button>
+
+                <div id="pfPolls" style="margin-top:1.5em;"></div>
+
+                <div class="verticalSection" style="margin-top:2em;">
+                    <h3 class="sectionTitle">Paramètres</h3>
+                    <form id="pfSettingsForm">
+                        <div class="inputContainer">
+                            <input is="emby-input" type="url" id="pfPublicBaseUrl" label="URL publique du serveur (optionnel)" placeholder="https://films.example.com" />
+                            <div class="fieldDescription">Adresse utilisée pour construire les liens de vote, si vos amis accèdent au serveur par une adresse différente de la vôtre. Vide = adresse actuelle du serveur.</div>
+                        </div>
+                        <button is="emby-button" type="submit" class="raised button-submit emby-button"><span>Enregistrer</span></button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Éditeur -->
+            <div id="pfEditView" class="pf-hidden">
+                <div class="sectionTitleContainer flex align-items-center">
+                    <h2 class="sectionTitle" id="pfEditTitle">Nouvelle soirée</h2>
+                </div>
+                <form id="pfEditForm">
+                    <div class="inputContainer">
+                        <input is="emby-input" type="text" id="pfTitle" label="Titre" required maxlength="100" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="text" id="pfDescription" label="Message pour les invités (optionnel)" maxlength="300" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="datetime-local" id="pfClosesAt" label="Clôture automatique (optionnel)" />
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" type="number" id="pfMaxVotes" label="Nombre de films maximum par personne (0 = illimité)" min="0" max="50" value="3" />
+                    </div>
+                    <div class="selectContainer">
+                        <select is="emby-select" id="pfResultsVisibility" label="Résultats visibles par les invités">
+                            <option value="AfterVoting">Après avoir voté</option>
+                            <option value="Always">Toujours</option>
+                            <option value="AfterClose">Seulement à la clôture</option>
+                        </select>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="pfIsClosed" />
+                            <span>Vote clôturé</span>
+                        </label>
+                    </div>
+
+                    <h3 class="sectionTitle" style="margin-top:1.5em;">Films proposés</h3>
+                    <p class="pf-muted">Combinez autant de sources que vous voulez : genres, bibliothèques, playlists, collections ou films individuels.</p>
+
+                    <div class="pf-chips" id="pfSources"></div>
+
+                    <div class="pf-search">
+                        <div class="selectContainer" style="flex:0 0 200px;">
+                            <select is="emby-select" id="pfSourceType" label="Ajouter">
+                                <option value="Genre">Tous les films d'un genre</option>
+                                <option value="Library">Toute une bibliothèque</option>
+                                <option value="Playlist">Une playlist</option>
+                                <option value="Collection">Une collection</option>
+                                <option value="Movie">Un film</option>
+                            </select>
+                        </div>
+                        <div class="inputContainer" style="flex:1 1 220px;">
+                            <input is="emby-input" type="search" id="pfSearchTerm" label="Rechercher" autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="pf-list" id="pfSearchResults"></div>
+
+                    <h3 class="sectionTitle">Aperçu <span id="pfPreviewCount" class="pf-muted"></span></h3>
+                    <p class="pf-muted">Cliquez sur un film pour le retirer du vote (ou le remettre).</p>
+                    <div class="pf-list" id="pfPreview"></div>
+
+                    <div class="pf-row" style="margin-top:1.5em;">
+                        <button is="emby-button" type="submit" class="raised button-submit emby-button"><span>Enregistrer</span></button>
+                        <button is="emby-button" type="button" id="pfCancel" class="raised button-cancel emby-button"><span>Annuler</span></button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Résultats -->
+            <div id="pfResultsView" class="pf-hidden">
+                <div class="sectionTitleContainer flex align-items-center">
+                    <h2 class="sectionTitle" id="pfResultsTitle">Résultats</h2>
+                </div>
+                <div id="pfResults"></div>
+                <button is="emby-button" type="button" id="pfBack" class="raised emby-button" style="margin-top:1em;"><span>Retour</span></button>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        (function () {
+            var pluginId = 'ce2da81e-c439-4976-8e42-4382f20e48b1';
+            var page = document.querySelector('#PartyflinConfigPage');
+            var $ = function (sel) { return page.querySelector(sel); };
+            var typeLabels = { Genre: 'Genre', Library: 'Bibliothèque', Playlist: 'Playlist', Collection: 'Collection', Movie: 'Film' };
+
+            var config = null;
+            var editing = null; // { id, sources: [], excluded: [] }
+            var searchTimer = null;
+            var previewTimer = null;
+
+            function esc(s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+
+            function api(method, path, body, expectJson) {
+                var options = { type: method, url: ApiClient.getUrl('Partyflin/' + path) };
+                if (body !== undefined) {
+                    options.data = JSON.stringify(body);
+                    options.contentType = 'application/json';
+                }
+                if (expectJson !== false) {
+                    options.dataType = 'json';
+                }
+                return ApiClient.ajax(options);
+            }
+
+            function showError(err) {
+                Dashboard.hideLoadingMsg();
+                if (err && typeof err.text === 'function') {
+                    err.text().then(function (t) {
+                        var msg = t;
+                        try { var parsed = JSON.parse(t); msg = typeof parsed === 'string' ? parsed : (parsed.title || t); } catch (e) { }
+                        Dashboard.alert(msg || 'Une erreur est survenue.');
+                    });
+                } else {
+                    Dashboard.alert('Une erreur est survenue.');
+                }
+            }
+
+            function show(view) {
+                ['#pfListView', '#pfEditView', '#pfResultsView'].forEach(function (v) {
+                    $(v).classList.toggle('pf-hidden', v !== view);
+                });
+                window.scrollTo(0, 0);
+            }
+
+            function voteLink(poll) {
+                var base = (config && config.PublicBaseUrl ? config.PublicBaseUrl : ApiClient.serverAddress()).replace(/\/+$/, '');
+                return base + '/Partyflin/Vote/' + poll.Token;
+            }
+
+            function formatDate(iso) {
+                return iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+            }
+
+            function toLocalInput(iso) {
+                if (!iso) return '';
+                var d = new Date(iso);
+                d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                return d.toISOString().slice(0, 16);
+            }
+
+            function copy(text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(function () {
+                        Dashboard.alert({ message: 'Lien copié dans le presse-papiers.', title: 'Partyflin' });
+                    });
+                } else {
+                    window.prompt('Copiez le lien :', text);
+                }
+            }
+
+            // ----- Liste -----
+
+            function loadList() {
+                Dashboard.showLoadingMsg();
+                Promise.all([
+                    ApiClient.getPluginConfiguration(pluginId),
+                    api('GET', 'Polls')
+                ]).then(function (res) {
+                    config = res[0];
+                    $('#pfPublicBaseUrl').value = config.PublicBaseUrl || '';
+                    renderPolls(res[1]);
+                    Dashboard.hideLoadingMsg();
+                }).catch(showError);
+            }
+
+            function renderPolls(polls) {
+                var container = $('#pfPolls');
+                if (!polls.length) {
+                    container.innerHTML = '<p class="pf-muted">Aucune soirée pour l\'instant.</p>';
+                    return;
+                }
+                container.innerHTML = polls.map(function (p) {
+                    var status = p.IsOpen
+                        ? '<span class="pf-badge pf-open">Ouvert</span>'
+                        : '<span class="pf-badge pf-closed">Clôturé</span>';
+                    var closes = p.ClosesAt ? ' · clôture ' + esc(formatDate(p.ClosesAt)) : '';
+                    return '<div class="pf-card" data-id="' + p.Id + '">'
+                        + '<h3>' + esc(p.Title) + ' ' + status + '</h3>'
+                        + '<div class="pf-muted">' + p.MovieCount + ' film(s) · ' + p.VoterCount + ' votant(s)' + closes + '</div>'
+                        + '<div class="pf-row" style="margin:.8em 0;">'
+                        + '<span class="pf-link">' + esc(voteLink(p)) + '</span>'
+                        + '<button type="button" class="raised emby-button" data-action="copy">Copier le lien</button>'
+                        + '<a class="raised emby-button" href="' + esc(voteLink(p)) + '" target="_blank" rel="noopener" style="text-decoration:none;">Ouvrir</a>'
+                        + '</div>'
+                        + '<div class="pf-row">'
+                        + '<button type="button" class="raised emby-button" data-action="results">Résultats</button>'
+                        + '<button type="button" class="raised emby-button" data-action="edit">Modifier</button>'
+                        + '<button type="button" class="raised emby-button" data-action="toggle">' + (p.IsClosed ? 'Rouvrir' : 'Clôturer') + '</button>'
+                        + '<button type="button" class="raised button-delete emby-button" data-action="delete">Supprimer</button>'
+                        + '</div></div>';
+                }).join('');
+                container._polls = polls;
+            }
+
+            $('#pfPolls').addEventListener('click', function (e) {
+                var btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                var card = btn.closest('[data-id]');
+                var poll = $('#pfPolls')._polls.find(function (p) { return p.Id === card.getAttribute('data-id'); });
+                switch (btn.getAttribute('data-action')) {
+                    case 'copy': copy(voteLink(poll)); break;
+                    case 'edit': openEditor(poll); break;
+                    case 'results': openResults(poll); break;
+                    case 'toggle':
+                        Dashboard.showLoadingMsg();
+                        api('PUT', 'Polls/' + poll.Id, Object.assign(toRequest(poll), { IsClosed: !poll.IsClosed }))
+                            .then(loadList).catch(showError);
+                        break;
+                    case 'delete':
+                        if (window.confirm('Supprimer « ' + poll.Title + ' » et tous ses votes ?')) {
+                            Dashboard.showLoadingMsg();
+                            api('DELETE', 'Polls/' + poll.Id, undefined, false).then(loadList).catch(showError);
+                        }
+                        break;
+                }
+            });
+
+            $('#pfSettingsForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                Dashboard.showLoadingMsg();
+                config.PublicBaseUrl = $('#pfPublicBaseUrl').value.trim();
+                ApiClient.updatePluginConfiguration(pluginId, config).then(function (r) {
+                    Dashboard.processPluginConfigurationUpdateResult(r);
+                    loadList();
+                }).catch(showError);
+            });
+
+            function toRequest(poll) {
+                return {
+                    Title: poll.Title,
+                    Description: poll.Description,
+                    ClosesAt: poll.ClosesAt,
+                    IsClosed: poll.IsClosed,
+                    MaxVotesPerVoter: poll.MaxVotesPerVoter,
+                    ResultsVisibility: poll.ResultsVisibility,
+                    Sources: poll.Sources,
+                    ExcludedItemIds: poll.ExcludedItemIds
+                };
+            }
+
+            // ----- Éditeur -----
+
+            function openEditor(poll) {
+                editing = {
+                    id: poll ? poll.Id : null,
+                    sources: poll ? poll.Sources.slice() : [],
+                    excluded: poll ? poll.ExcludedItemIds.map(function (x) { return x.replace(/-/g, ''); }) : []
+                };
+                $('#pfEditTitle').textContent = poll ? 'Modifier la soirée' : 'Nouvelle soirée';
+                $('#pfTitle').value = poll ? poll.Title : '';
+                $('#pfDescription').value = poll ? poll.Description : '';
+                $('#pfClosesAt').value = poll ? toLocalInput(poll.ClosesAt) : '';
+                $('#pfMaxVotes').value = poll ? poll.MaxVotesPerVoter : 3;
+                $('#pfResultsVisibility').value = poll ? poll.ResultsVisibility : 'AfterVoting';
+                $('#pfIsClosed').checked = poll ? poll.IsClosed : false;
+                $('#pfSearchTerm').value = '';
+                renderSources();
+                runSearch();
+                refreshPreview();
+                show('#pfEditView');
+            }
+
+            function renderSources() {
+                $('#pfSources').innerHTML = editing.sources.length
+                    ? editing.sources.map(function (s, i) {
+                        return '<span class="pf-chip"><small>' + esc(typeLabels[s.Type]) + '</small> ' + esc(s.Label || s.Value)
+                            + '<button type="button" data-index="' + i + '" title="Retirer">×</button></span>';
+                    }).join('')
+                    : '<span class="pf-muted">Aucune source : recherchez ci-dessous ce que vous voulez proposer.</span>';
+            }
+
+            $('#pfSources').addEventListener('click', function (e) {
+                var btn = e.target.closest('button[data-index]');
+                if (!btn) return;
+                editing.sources.splice(parseInt(btn.getAttribute('data-index'), 10), 1);
+                renderSources();
+                refreshPreview();
+            });
+
+            function runSearch() {
+                var type = $('#pfSourceType').value;
+                var term = $('#pfSearchTerm').value.trim();
+                api('GET', 'Search?type=' + encodeURIComponent(type) + '&term=' + encodeURIComponent(term))
+                    .then(function (items) {
+                        $('#pfSearchResults').innerHTML = items.length
+                            ? items.map(function (it) {
+                                var added = editing.sources.some(function (s) { return s.Type === type && s.Value === it.Value; });
+                                return '<div class="pf-item" data-value="' + esc(it.Value) + '" data-label="' + esc(it.Label) + '">'
+                                    + '<span>' + esc(it.Label) + ' <span class="pf-muted">' + esc(it.Detail) + '</span></span>'
+                                    + '<span class="pf-muted">' + (added ? '✓ ajouté' : '+ Ajouter') + '</span></div>';
+                            }).join('')
+                            : '<div class="pf-item pf-muted">Aucun résultat.</div>';
+                    }).catch(showError);
+            }
+
+            $('#pfSourceType').addEventListener('change', runSearch);
+            $('#pfSearchTerm').addEventListener('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(runSearch, 250);
+            });
+
+            $('#pfSearchResults').addEventListener('click', function (e) {
+                var row = e.target.closest('[data-value]');
+                if (!row) return;
+                var source = { Type: $('#pfSourceType').value, Value: row.getAttribute('data-value'), Label: row.getAttribute('data-label') };
+                var exists = editing.sources.some(function (s) { return s.Type === source.Type && s.Value === source.Value; });
+                if (!exists) {
+                    editing.sources.push(source);
+                    renderSources();
+                    refreshPreview();
+                    runSearch();
+                }
+            });
+
+            function refreshPreview() {
+                clearTimeout(previewTimer);
+                previewTimer = setTimeout(function () {
+                    if (!editing.sources.length) {
+                        $('#pfPreview').innerHTML = '';
+                        $('#pfPreviewCount').textContent = '';
+                        return;
+                    }
+                    api('POST', 'Preview', { Sources: editing.sources }).then(renderPreview).catch(showError);
+                }, 150);
+            }
+
+            function renderPreview(movies) {
+                var kept = movies.filter(function (m) { return editing.excluded.indexOf(m.Id.replace(/-/g, '')) < 0; }).length;
+                $('#pfPreviewCount').textContent = '— ' + kept + ' film(s) proposé(s)'
+                    + (kept !== movies.length ? ', ' + (movies.length - kept) + ' retiré(s)' : '');
+                $('#pfPreview').innerHTML = movies.map(function (m) {
+                    var id = m.Id.replace(/-/g, '');
+                    var excluded = editing.excluded.indexOf(id) >= 0;
+                    return '<div class="pf-item' + (excluded ? ' pf-excluded' : '') + '" data-movie="' + id + '">'
+                        + '<span>' + esc(m.Name) + (m.Year ? ' <span class="pf-muted">(' + m.Year + ')</span>' : '') + '</span>'
+                        + '<span class="pf-muted">' + (excluded ? 'Remettre' : 'Retirer') + '</span></div>';
+                }).join('');
+                $('#pfPreview')._movies = movies;
+            }
+
+            $('#pfPreview').addEventListener('click', function (e) {
+                var row = e.target.closest('[data-movie]');
+                if (!row) return;
+                var id = row.getAttribute('data-movie');
+                var i = editing.excluded.indexOf(id);
+                if (i >= 0) editing.excluded.splice(i, 1); else editing.excluded.push(id);
+                renderPreview($('#pfPreview')._movies);
+            });
+
+            $('#pfEditForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (!editing.sources.length) {
+                    Dashboard.alert('Ajoutez au moins une source de films.');
+                    return;
+                }
+                var closesAt = $('#pfClosesAt').value;
+                var body = {
+                    Title: $('#pfTitle').value.trim(),
+                    Description: $('#pfDescription').value.trim(),
+                    ClosesAt: closesAt ? new Date(closesAt).toISOString() : null,
+                    IsClosed: $('#pfIsClosed').checked,
+                    MaxVotesPerVoter: parseInt($('#pfMaxVotes').value, 10) || 0,
+                    ResultsVisibility: $('#pfResultsVisibility').value,
+                    Sources: editing.sources,
+                    ExcludedItemIds: editing.excluded
+                };
+                Dashboard.showLoadingMsg();
+                var request = editing.id ? api('PUT', 'Polls/' + editing.id, body) : api('POST', 'Polls', body);
+                request.then(function () {
+                    show('#pfListView');
+                    loadList();
+                }).catch(showError);
+            });
+
+            $('#pfCancel').addEventListener('click', function () { show('#pfListView'); });
+
+            // ----- Résultats -----
+
+            function openResults(poll) {
+                Dashboard.showLoadingMsg();
+                api('GET', 'Polls/' + poll.Id + '/Results').then(function (r) {
+                    $('#pfResultsTitle').textContent = 'Résultats – ' + poll.Title;
+                    var max = r.Entries.length ? r.Entries[0].Votes : 1;
+                    $('#pfResults').innerHTML = '<p class="pf-muted">' + r.VoterCount + ' votant(s)</p>'
+                        + (r.Entries.length ? r.Entries.map(function (e, i) {
+                            return '<div><strong>' + (i + 1) + '. ' + esc(e.Name) + '</strong>'
+                                + (e.Year ? ' <span class="pf-muted">(' + e.Year + ')</span>' : '')
+                                + ' — ' + e.Votes + ' vote(s)'
+                                + '<div class="pf-muted">' + esc(e.Voters.join(', ')) + '</div>'
+                                + '<div class="pf-bar"><div style="width:' + Math.round(e.Votes * 100 / max) + '%"></div></div></div>';
+                        }).join('') : '<p>Aucun vote pour l\'instant.</p>');
+                    show('#pfResultsView');
+                    Dashboard.hideLoadingMsg();
+                }).catch(showError);
+            }
+
+            $('#pfBack').addEventListener('click', function () { show('#pfListView'); });
+            $('#pfNewPoll').addEventListener('click', function () { openEditor(null); });
+
+            page.addEventListener('pageshow', function () {
+                show('#pfListView');
+                loadList();
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>

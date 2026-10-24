@@ -1,0 +1,59 @@
+# Partyflin
+
+Plugin Jellyfin (12.3+) pour choisir le film d'une soirée entre amis : vous créez une soirée, vous envoyez le lien, chacun vote depuis son téléphone, **sans compte Jellyfin**.
+
+## Fonctionnalités
+
+- **Sources de films cumulables** pour chaque soirée :
+  - tous les films d'un **genre** ;
+  - tous les films d'une **bibliothèque** ;
+  - une **playlist** créée manuellement dans Jellyfin ;
+  - une **collection** (les collections imbriquées sont parcourues) ;
+  - des **films individuels**.
+- Aperçu de la liste finale avec possibilité de **retirer** des films.
+- Nombre maximum de films par votant (ou illimité), date de clôture automatique, clôture/réouverture manuelle.
+- Visibilité des résultats : toujours, après avoir voté, ou seulement à la clôture.
+- Page de vote publique responsive : affiches, fiche du film (résumé, durée, genres, note), modification du vote, classement en direct.
+- Les films sont recalculés à chaque affichage : un film ajouté au genre/à la playlist apparaît automatiquement dans le vote.
+
+## Installation
+
+```bash
+dotnet build Jellyfin.Plugin.Partyflin -c Release
+```
+
+Copiez `Jellyfin.Plugin.Partyflin/bin/Release/net10.0/Jellyfin.Plugin.Partyflin.dll` dans
+`<dossier de données Jellyfin>/plugins/Partyflin_1.0.0.0/` (par ex. `/config/data/plugins/Partyflin_1.0.0.0/` avec l'image Docker officielle), puis redémarrez Jellyfin.
+
+## Utilisation
+
+1. Tableau de bord → **Partyflin** (aussi présent dans le menu latéral).
+2. **+ Nouvelle soirée** : titre, message, règles du vote, puis ajoutez des sources via la recherche.
+3. Enregistrez et **copiez le lien** : `https://votre-serveur/Partyflin/Vote/<jeton>`.
+4. Suivez les résultats depuis le tableau de bord, clôturez quand c'est l'heure.
+
+Si vos amis passent par une autre adresse que la vôtre (reverse proxy, nom de domaine), renseignez l'**URL publique** dans les paramètres du plugin.
+
+## Sécurité
+
+- Les endpoints d'administration (`/Partyflin/Polls`, `/Search`, `/Preview`) sont réservés aux administrateurs.
+- Les endpoints de vote (`/Partyflin/Vote/{jeton}/…`) sont anonymes, protégés uniquement par le jeton aléatoire du lien. Ils n'exposent que les films de la soirée (titre, année, résumé, affiche).
+- Un votant est reconnu par un identifiant stocké dans son navigateur : c'est pratique entre amis, mais rien n'empêche quelqu'un de voter deux fois depuis deux navigateurs.
+
+## Données
+
+Les soirées et les votes sont stockés dans `<dossier de données>/data/partyflin/polls.json`.
+
+## API
+
+| Méthode | Route | Accès |
+|---|---|---|
+| GET / POST | `/Partyflin/Polls` | admin |
+| GET / PUT / DELETE | `/Partyflin/Polls/{id}` | admin |
+| GET | `/Partyflin/Polls/{id}/Results` | admin |
+| GET | `/Partyflin/Search?type=Genre\|Library\|Playlist\|Collection\|Movie&term=` | admin |
+| POST | `/Partyflin/Preview` | admin |
+| GET | `/Partyflin/Vote/{jeton}` (page HTML) | public |
+| GET | `/Partyflin/Vote/{jeton}/Data?voterId=` | public |
+| POST | `/Partyflin/Vote/{jeton}/Ballot` | public |
+| GET | `/Partyflin/Vote/{jeton}/Poster/{itemId}` | public |
