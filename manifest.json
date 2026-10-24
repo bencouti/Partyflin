@@ -1,0 +1,21 @@
+[
+  {
+    "guid": "ce2da81e-c439-4976-8e42-4382f20e48b1",
+    "versions": [
+      {
+        "version": "1.0.0.0",
+        "changelog": "Première version.",
+        "targetAbi": "12.3.0.0",
+        "sourceUrl": "https://github.com/bencouti/Partyflin/releases/download/v1.0.0.0/partyflin_1.0.0.0.zip",
+        "checksum": "4a21c0534d59500ab3d69ec8f6090633",
+        "timestamp": "2026-10-24T15:07:17Z"
+      }
+    ],
+    "name": "Partyflin",
+    "overview": "Liens de vote pour choisir le film d'une soirée entre amis",
+    "description": "Créez des soirées films et partagez un lien de vote public. Les films proposés peuvent venir d'un genre, d'une bibliothèque, d'une playlist, de collections ou être choisis individuellement.",
+    "owner": "partyflin",
+    "category": "General",
+    "imageUrl": ""
+  }
+]
