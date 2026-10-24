@@ -18,6 +18,16 @@ Plugin Jellyfin (12.3+) pour choisir le film d'une soirée entre amis : vous cr�
 
 ## Installation
 
+### Depuis le dépôt de plugins (recommandé)
+
+1. Tableau de bord → **Plugins** → **Dépôts** → **+**, puis ajoutez :
+   `https://raw.githubusercontent.com/<compte>/<repo>/main/manifest.json`
+2. **Catalogue** → **Partyflin** → **Installer**, puis redémarrez Jellyfin.
+
+Les mises à jour apparaissent ensuite dans le catalogue comme pour les plugins officiels.
+
+### Manuellement
+
 ```bash
 dotnet build Jellyfin.Plugin.Partyflin -c Release
 ```
@@ -33,6 +43,21 @@ Copiez `Jellyfin.Plugin.Partyflin/bin/Release/net10.0/Jellyfin.Plugin.Partyflin.
 4. Suivez les résultats depuis le tableau de bord, clôturez quand c'est l'heure.
 
 Si vos amis passent par une autre adresse que la vôtre (reverse proxy, nom de domaine), renseignez l'**URL publique** dans les paramètres du plugin.
+
+## Publier une version
+
+1. Mettez à jour `changelog` dans [build.yaml](build.yaml).
+2. Poussez un tag à quatre nombres :
+   ```bash
+   git tag v1.0.1.0 && git push origin v1.0.1.0
+   ```
+3. La GitHub Action [release.yml](.github/workflows/release.yml) compile le plugin, attache `partyflin_1.0.1.0.zip` à une Release, puis ajoute la version dans `manifest.json` sur `main`.
+
+Pour générer le zip et le manifest localement (autre hébergement) :
+
+```bash
+dotnet run scripts/package.cs -- --base-url https://exemple.com/partyflin
+```
 
 ## Sécurité
 

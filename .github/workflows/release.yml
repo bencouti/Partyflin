@@ -1,0 +1,58 @@
+# Publie une version du plugin à chaque tag vX.Y.Z.W :
+#  - compile et zippe le plugin, puis l'attache à une Release GitHub ;
+#  - ajoute la version au manifest.json de la branche main (dépôt de plugins Jellyfin).
+#
+# URL du dépôt à ajouter dans Jellyfin :
+#   https://raw.githubusercontent.com/<compte>/<repo>/main/manifest.json
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Récupérer le manifest existant
+        run: |
+          mkdir -p dist
+          git show origin/main:manifest.json > dist/manifest.json 2>/dev/null || rm -f dist/manifest.json
+
+      - name: Construire le zip et le manifest
+        run: |
+          dotnet run scripts/package.cs -- \
+            --version "${GITHUB_REF_NAME}" \
+            --base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}" \
+            --out dist
+
+      - name: Créer la Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/partyflin_*.zip \
+            --title "Partyflin ${GITHUB_REF_NAME}" \
+            --generate-notes
+
+      - name: Publier le manifest sur main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout main
+          cp dist/manifest.json manifest.json
+          git add manifest.json
+          git commit -m "manifest: ${GITHUB_REF_NAME}"
+          git push origin main
